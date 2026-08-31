@@ -16,7 +16,7 @@ private:
         
         // 2. Safely move elements from the old array to the new one
         for (size_t i = 0; i < m_size; ++i) {
-            new_arr[i] = std::move(arr[i]);
+            new_arr[i] = std::move_if_noexcept(arr[i]);
         }
         
         // 3. Clean up the old array and update pointers
@@ -121,4 +121,28 @@ public:
 
     size_t size() const { return m_size; }
     size_t capacity() const { return m_capacity; }
+
+    // iterators, for range-based loops
+    using iterator = T*;
+    using const_iterator = const T*;
+
+    iterator begin() noexcept { return arr; }
+    iterator end() noexcept { return arr + m_size; }
+    const_iterator begin() const noexcept { return arr; }
+    const_iterator end() const noexcept { return arr + m_size; }
+    const_iterator cbegin() const noexcept { return arr; }
+    const_iterator cend() const noexcept { return arr + m_size; }
+
+    // emplace_back, using variadic templates & perfect forwarding
+    template <typename... Args>
+    T& emplace_back(Args&&... args) {
+        if (m_size == m_capacity) {
+            resize(m_capacity == 0 ? 1 : m_capacity * 2);
+        }
+        
+        // Construct the object directly using forwarded arguments.
+        // In C++17 onward, emplace_back returns a reference to the created element.
+        arr[m_size] = T(std::forward<Args>(args)...);
+        return arr[m_size++];
+    }
 };
